@@ -1,10 +1,12 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { Formik } from 'formik';
 import Logo from 'src/components/Logo';
+import API from '../../api';
+import {proxy} from '../../proxy';
+import axios from 'axios';
 import {
- 
   Box,
   Button,
   Container,
@@ -12,7 +14,7 @@ import {
   Link,
   TextField,
   Typography,
-  makeStyles,
+  makeStyles
 } from '@material-ui/core';
 import FacebookIcon from 'src/icons/Facebook';
 import GoogleIcon from 'src/icons/Google';
@@ -25,52 +27,62 @@ const useStyles = makeStyles(theme => ({
     paddingBottom: theme.spacing(3),
     paddingTop: theme.spacing(8)
   },
-  inputTextColor:{
-    color:'white'
-}, 
-// cardArea: {
-//   backgroundColor: theme.palette.background.dark,
-// }
-  
+  inputTextColor: {
+    color: 'white'
+  },
+  leftCardSection: {
+    fontSize: '3vh',
+    color: 'white',
+    justifyContent: "center",
+    alignItems: "center",
+    display: "flex"
+    }
+
 }));
 
 const LoginView = () => {
   const classes = useStyles();
   const navigate = useNavigate();
+  // const [email] = useState('')
+  // const [password] = useState('')
 
   return (
     <Page className={classes.root} title="Login">
-      <Container maxWidth="md" className={classes.cardArea}>
+      <Container maxWidth="md">
         <Box
           display="flex"
           flexDirection="column"
           height="400px"
-          
           justifyContent="center"
           boxShadow={20}
         >
-         
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6} >
+            <Grid item xs={12} md={6}>
               <Box ml={4}>
-               
-              <Typography variant="h2" color="textSecondary" > <Logo /> MatX Pro</Typography>
-              <Typography variant="h4" color="textSecondary" >Admin Dashboard</Typography>
-              <Box m={5}>
-              <ul style={{fontSize: "3vh", color: "white"}}>
-                <li>JWT, FireBase & Auth0 Authentication</li>
-                <li>Clean & Organised code</li>
-                <li>Limitless Pages & Components</li>
-              </ul>
-              </Box>
+                <Typography variant="h2" color="textSecondary">
+                  {' '}
+                  <Logo /> MatX Pro
+                </Typography>
+                <Typography variant="h4" color="textSecondary">
+                  Admin Dashboard
+                </Typography>
+                <Container>
+                <Box className={classes.leftCardSection} mt={5}>
+                  <ul>
+                    <li>JWT, FireBase & Auth0 Authentication</li>
+                    <li>Clean & Organised code</li>
+                    <li>Limitless Pages & Components</li>
+                  </ul>
+                </Box>
+                </Container>
               </Box>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <Formik
                 initialValues={{
-                  email: 'demo@devias.io',
-                  password: 'Password123'
+                  email: '',
+                  password: ''
                 }}
                 validationSchema={Yup.object().shape({
                   email: Yup.string()
@@ -81,8 +93,20 @@ const LoginView = () => {
                     .max(255)
                     .required('Password is required')
                 })}
-                onSubmit={() => {
-                  navigate('/app/dashboard', { replace: true });
+                onSubmit={(value) => {
+                  axios.post(`${proxy}/api/v1/user/signin`, value).then(res => {
+                    if (res.data.success === true && res.data.token !== "") {
+                      
+                      alert("Logged in successfully");
+                      localStorage.setItem("Token", res.data.token);
+                      navigate('/app/dashboard', { replace: true });
+                      // props.history.push("/app/dashboard");
+                    } else {
+                      alert("Incurrect email or password");
+                    }
+                  })
+                  // console.log("Login successfull", value)
+                  // navigate('/app/dashboard', { replace: true });
                 }}
               >
                 {({
@@ -95,7 +119,6 @@ const LoginView = () => {
                   values
                 }) => (
                   <form onSubmit={handleSubmit}>
-                   
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={12}>
                         <Button
@@ -131,41 +154,40 @@ const LoginView = () => {
                       </Typography>
                     </Box>
                     <Box mr={4} ml={2}>
-                    <TextField
-                      error={Boolean(touched.email && errors.email)}
-                      fullWidth
-                      helperText={touched.email && errors.email}
-                      label="Email Address"
-                      margin="normal"
-                      name="email"
-                      onBlur={handleBlur}
-                      onChange={handleChange}
-                      type="email"
-                      value={values.email}
-                      variant="outlined"
-                      size="small"
-                      InputProps={{
-                        className: classes.inputTextColor
-                      }}
-                    />
-                    <TextField
-                      error={Boolean(touched.password && errors.password)}
-                      fullWidth
-                      helperText={touched.password && errors.password}
-                      label="Password"
-                      margin="normal"
-                      name="password"
-                      onBlur={handleBlur}
-                      onChange={handleChange}
-                      type="password"
-                      value={values.password}
-                      variant="outlined"
-                      size="small"
-                      InputProps={{
-                        className: classes.inputTextColor
-                      }}
-                     
-                    />
+                      <TextField
+                        error={Boolean(touched.email && errors.email)}
+                        fullWidth
+                        helperText={touched.email && errors.email}
+                        label="Email Address"
+                        margin="normal"
+                        name="email"
+                        onBlur={handleBlur}
+                        onChange={handleChange}
+                        type="email"
+                        value={values.email}
+                        variant="outlined"
+                        size="small"
+                        InputProps={{
+                          className: classes.inputTextColor
+                        }}
+                      />
+                      <TextField
+                        error={Boolean(touched.password && errors.password)}
+                        fullWidth
+                        helperText={touched.password && errors.password}
+                        label="Password"
+                        margin="normal"
+                        name="password"
+                        onBlur={handleBlur}
+                        onChange={handleChange}
+                        type="password"
+                        value={values.password}
+                        variant="outlined"
+                        size="small"
+                        InputProps={{
+                          className: classes.inputTextColor
+                        }}
+                      />
                     </Box>
                     <Box mr={4} ml={2} mb={2}>
                       <Button
