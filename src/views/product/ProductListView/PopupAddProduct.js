@@ -25,7 +25,8 @@ export default function PopupAddProduct(props) {
   return (
     <div>
       <Dialog
-        maxWidth="md"
+        fullWidth
+        maxWidth = "md"
         open={openPopup}
         onClose={() => setOpenPopup(false)}
       >

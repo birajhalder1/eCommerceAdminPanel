@@ -1,17 +1,19 @@
-import React, {useState} from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import React from 'react';
+// import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { Formik } from 'formik';
 import Logo from 'src/components/Logo';
-import API from '../../api';
+// import API from '../../api';
 import {proxy} from '../../proxy';
+import {loginApi} from '../../api';
 import axios from 'axios';
 import {
   Box,
   Button,
   Container,
   Grid,
-  Link,
+  
   TextField,
   Typography,
   makeStyles
@@ -94,8 +96,11 @@ const LoginView = () => {
                     .required('Password is required')
                 })}
                 onSubmit={(value) => {
-                  axios.post(`${proxy}/api/v1/user/signin`, value).then(res => {
+                  
+                  axios.post(`${proxy}/${loginApi}`, value).then(res => {
+                    console.log(res.data)
                     if (res.data.success === true && res.data.token !== "") {
+                      
                       
                       alert("Logged in successfully");
                       localStorage.setItem("Token", res.data.token);
@@ -105,8 +110,7 @@ const LoginView = () => {
                       alert("Incurrect email or password");
                     }
                   })
-                  // console.log("Login successfull", value)
-                  // navigate('/app/dashboard', { replace: true });
+                  
                 }}
               >
                 {({
@@ -114,7 +118,7 @@ const LoginView = () => {
                   handleBlur,
                   handleChange,
                   handleSubmit,
-                  isSubmitting,
+                  // isSubmitting,
                   touched,
                   values
                 }) => (
@@ -192,7 +196,7 @@ const LoginView = () => {
                     <Box mr={4} ml={2} mb={2}>
                       <Button
                         color="primary"
-                        disabled={isSubmitting}
+                        // disabled={isSubmitting}
                         fullWidth
                         size="large"
                         type="submit"
