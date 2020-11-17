@@ -15,11 +15,11 @@ import {
 } from '@material-ui/core';
 
 const user = {
-  avatar: '/static/images/avatars/avatar_6.png',
-  city: 'Los Angeles',
+  avatar: 'https://res.cloudinary.com/dr8cpdoyo/image/upload/v1569559708/avrfhlucsaxy02eqtsmi.jpg',
+  city: 'Kolkata',
   country: 'USA',
-  jobTitle: 'Senior Developer',
-  name: 'Katarina Smith',
+  jobTitle: 'Fullstack Developer',
+  name: 'BIRAJ HALDER',
   timezone: 'GTM-7'
 };
 

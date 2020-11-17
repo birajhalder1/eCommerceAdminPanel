@@ -1,22 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import * as Yup from 'yup';
-import { Formik } from 'formik';
-import MenuItem from '@material-ui/core/MenuItem';
+import { Select, MenuItem, InputLabel, FormControl } from '@material-ui/core';
 import { proxy } from '../../../proxy';
 import axios from 'axios';
 import PermMediaIcon from '@material-ui/icons/PermMedia';
-
+import { createProductApi, imageUploadApi } from '../../../api';
+import ProgressBar from './ProgressBar';
 import {
   Box,
   Button,
-  Checkbox,
   Container,
-  FormHelperText,
-  Link,
   TextField,
-  Typography,
   makeStyles,
   Grid
 } from '@material-ui/core';
@@ -31,16 +25,18 @@ const useStyles = makeStyles(theme => ({
   },
   dragAnddropArea: {
     fontSize: '3vh',
-    justifyContent: "center",
-    alignItems: "center",
-    display: "flex",
-    cursor: "pointer"
+    justifyContent: 'center',
+    alignItems: 'center',
+    display: 'flex',
+    cursor: 'pointer'
   },
   previewImage: {
-    overflowY: "scroll", 
-    height: "200px",
-    
-   }
+    overflowY: 'scroll',
+    height: '200px'
+  },
+  formControl: {
+    minWidth: '100%'
+  }
 }));
 
 const thumbsContainer = {
@@ -58,7 +54,7 @@ const thumb = {
   marginRight: 8,
   width: 100,
   height: 100,
-  padding: 4,
+  padding: 4
   // boxSizing: 'border-box'
 };
 
@@ -76,13 +72,27 @@ const img = {
 
 const AddProduct = () => {
   const classes = useStyles();
-  const navigate = useNavigate();
 
-  const [files, setFiles] = useState([]);
+  const [sBrandName, setBrandName] = useState('');
+  const [sTitle, setTitle] = useState('');
+  const [sOriginalPrice, setOriginalPrice] = useState('');
+  const [sDiscount, setDiscount] = useState('');
+  const [sSellingPrice, setSellingPrice] = useState('');
+  const [sReturnDayCount, setReturnDayCount] = useState('');
+  const [sColor, setColor] = useState('');
+  const [oCategory, setCategory] = useState({});
+  const [sSellerBy, setSellerBy] = useState('');
+  const [sImages, setImages] = useState(['']);
+  const [sDetailDescription, setDetailDescription] = useState('');
+  const [sQuantity, setQuantity] = useState('');
+  const [sStock, setStock] = useState('');
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [productImages, setProductImages] = useState([]);
   const { getRootProps, getInputProps } = useDropzone({
     accept: 'image/*',
     onDrop: acceptedFiles => {
-      setFiles(
+      setProductImages(
         acceptedFiles.map(file =>
           Object.assign(file, {
             preview: URL.createObjectURL(file)
@@ -92,27 +102,101 @@ const AddProduct = () => {
     }
   });
 
-  const uploadFiles = async() =>{
-    // console.log(files)
-    let images = [];
-    for(let i = 0; i< files.length - 1; i++){
-      try {
-        let uploadData = new FormData()
-        uploadData.append("photo", files[i], files[i].name);
-        // axios.defaults.headers.common['Authorization'] = localStorage.getItem('Token');
-        axios.post(`${proxy}/api/v1/product/imageUpload`, uploadData).then(res => {
-         console.log(res);
-         images.push(res.data.secure_url)
-        })
-      } catch (error) {
-        console.log(error)
-      }
-     
+  // Clear all field after submit
+  const handleClear = () => {
+    setBrandName('');
+    setTitle('');
+    setOriginalPrice('');
+    setDiscount('');
+    setColor('');
+    setSellingPrice('');
+    setColor('');
+    setSellerBy('');
+    setDetailDescription('');
+    setQuantity('');
+    setCategory('');
+    setStock('');
+  };
+
+  // Validation in all field
+  const allFieldFilled = () => {
+    if (
+      sBrandName === ' ' ||
+      sTitle === ' ' ||
+      sOriginalPrice === ' ' ||
+      sDiscount === ' ' ||
+      sSellingPrice === ' ' ||
+      sReturnDayCount === ' ' ||
+      sColor === ' ' ||
+      oCategory === ' ' ||
+      sSellerBy === ' ' ||
+      sDetailDescription === ' ' ||
+      sQuantity === ' ' ||
+      sStock === ' '
+    ) {
+      return false;
+    } else {
+      return true;
     }
-  }
+  };
 
+  const ImageUpload = async files => {
+    /*** update image and getting url and
+     * setphotourl
+     */
+    try {
+      let productImages = [];
+      setIsLoading(true);
+      for (let i = 0; i <= files.length - 1; i++) {
+        const data = new FormData();
+        data.append('photo', files[i], files[i].name);
+        let response = await axios.post(`${proxy}/${imageUploadApi}`, data, {
+          headers: {
+            accept: 'application/json',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Content-Type': `multipart/form-data; boundary=${data._boundary}`
+          }
+        });
+        productImages.push(response.data.data.secure_url);
+      }
+      setProductImages(productImages);
+      setIsLoading(false);
+      
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-  const thumbs = files.map(file => (
+  // Submit form input
+  const submitProduct = () => {
+    if (allFieldFilled) {
+      const insertProduct = {
+        brandName: sBrandName,
+        title: sTitle,
+        originalPrice: sOriginalPrice,
+        discount: sDiscount,
+        sellingPrice: sSellingPrice,
+        color: sColor,
+        returnDayCount: sReturnDayCount,
+        category: oCategory,
+        sellerBy: sSellerBy,
+        images: productImages,
+        detailDescription: sDetailDescription,
+        quantity: sQuantity,
+        stock: sStock
+      };
+
+      axios.post(`${proxy}/${createProductApi}`, insertProduct).then(res => {
+        console.log(res.data);
+        handleClear();
+        alert('Product has been added !!');
+      });
+    } else {
+      alert('Please all field fillup mendatory');
+    }
+  };
+
+  const thumbs = productImages.map(file => (
     <div style={thumb} key={file.name}>
       <div style={thumbInner}>
         <img src={file.preview} style={img} />
@@ -123,25 +207,10 @@ const AddProduct = () => {
   useEffect(
     () => () => {
       // Make sure to revoke the data uris to avoid memory leaks
-      files.forEach(file => URL.revokeObjectURL(file.preview));
+      productImages.forEach(file => URL.revokeObjectURL(file.preview));
     },
-    [files]
+    [productImages]
   );
-
-  const colors = [
-    {
-      value: 'white',
-      label: 'White'
-    },
-    {
-      value: 'black',
-      label: 'Black'
-    },
-    {
-      value: 'pink',
-      label: 'Pink'
-    }
-  ];
 
   return (
     <Page className={classes.root} title="Add Product">
@@ -152,338 +221,161 @@ const AddProduct = () => {
         justifyContent="center"
       >
         <Container maxWidth="md">
-        <Button onClick={() => uploadFiles()}>
-                    Add Image
-                  </Button>
           <Box border={3} style={{ height: '210px' }}>
-          
             <Grid container spacing={2}>
-              <Grid item xs={12} md={4} {...getRootProps({ className: 'dropzone' })} className={classes.dragAnddropArea}>
-                <Box  m={5}  >
-                  <input {...getInputProps()} />
+              <Grid
+                item
+                xs={12}
+                md={4}
+                {...getRootProps({ className: 'dropzone' })}
+                className={classes.dragAnddropArea}
+              >
+                <Box m={5}>
+                  <input
+                    {...getInputProps()}
+                    onChange={e => ImageUpload(e.target.files)}
+                  />
 
                   <p>Drag 'n' drop some files here, or click to select files</p>
                   <PermMediaIcon />
-
-                  
                 </Box>
               </Grid>
-              <Grid item xs={12} md={8} >
+              <Grid item xs={12} md={8}>
                 <Box className={classes.previewImage}>
-                <aside style={thumbsContainer}>{thumbs}</aside>
+                  <aside style={thumbsContainer}>{thumbs}</aside>
                 </Box>
-               
               </Grid>
             </Grid>
           </Box>
+          <Box m={5}>{isLoading ? <ProgressBar /> : ''}</Box>
 
-          <Formik
-            initialValues={{
-              brandName: '',
-              title: '',
-              originalPrice: '',
-              discount: '',
-              color: '',
-              retrunDayCount: '',
+          <form onSubmit={e => e.preventDefault()}>
+            <Box>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Box>
+                    <TextField
+                      fullWidth
+                      label="Brand name"
+                      name="brandName"
+                      onChange={e => setBrandName(e.target.value)}
+                      value={sBrandName}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Title"
+                      name="Title"
+                      onChange={e => setTitle(e.target.value)}
+                      value={sTitle}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Original Price"
+                      type="number"
+                      name="Original Price"
+                      onChange={e => setOriginalPrice(e.target.value)}
+                      value={sOriginalPrice}
+                    />
 
-              category: '',
-              sellerBy: '',
-              detailDescription: '',
-              stock: '',
-              quantity: '',
-              policy: false
-            }}
-            validationSchema={Yup.object().shape({
-              brandName: Yup.string()
-                .max(255)
-                .required('Brand name is required'),
-              title: Yup.string()
-                .max(255)
-                .required('Title is required'),
-              originalPrice: Yup.number()
-                .integer()
-                .required('Original price is required'),
-
-              discount: Yup.number()
-                .integer()
-                .required('Discount is required'),
-              Color: Yup.string()
-                .max(255)
-                .required('Color is required'),
-              retrunDayCount: Yup.number()
-                .integer()
-                .required('Return day is required'),
-
-              category: Yup.string()
-                .max(255)
-                .required('Category is required'),
-              sellerBy: Yup.string()
-                .max(255)
-                .required('Seller by is required'),
-
-              detailDescription: Yup.string()
-                .max(255)
-                .required('Details description is required'),
-              stock: Yup.number()
-                .integer()
-                .required('Stock is required'),
-              quantity: Yup.number()
-                .integer()
-                .required('Quantity is required'),
-              policy: Yup.boolean().oneOf([true], 'This field must be checked')
-            })}
-            onSubmit={value => {
-              console.log('hitt', value);
-              axios
-                .post(`${proxy}/api/v1/product/createProduct`, value)
-                .then(res => {
-                  console.log(res);
-                  alert('Product has been added !!');
-                  navigate('/app/dashboard', { replace: true });
-                });
-            }}
-          >
-            {({
-              errors,
-              handleBlur,
-              handleChange,
-              handleSubmit,
-              // isSubmitting,
-              touched,
-              values
-            }) => (
-              <form onSubmit={handleSubmit}>
-                <Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <Box>
-                        <TextField
-                          error={Boolean(touched.brandName && errors.brandName)}
-                          fullWidth
-                          helperText={touched.brandName && errors.brandName}
-                          label="Brand name"
-                          margin="normal"
-                          name="brandName"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.brandName}
-                        />
-                      </Box>
-                      <Box>
-                        <TextField
-                          error={Boolean(
-                            touched.originalPrice && errors.originalPrice
-                          )}
-                          fullWidth
-                          helperText={
-                            touched.originalPrice && errors.originalPrice
-                          }
-                          label="Original Price"
-                          margin="normal"
-                          name="originalPrice"
-                          type="number"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.originalPrice}
-                        />
-                      </Box>
-                      <Box>
-                        <TextField
-                          error={Boolean(touched.color && errors.color)}
-                          fullWidth
-                          helperText={touched.color && errors.color}
-                          select
-                          label="Color"
-                          margin="normal"
-                          name="color"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.color}
-                        >
-                          {colors.map(option => (
-                            <MenuItem key={option.value} value={option.value}>
-                              {option.label}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      </Box>
-
-                      <Box>
-                        <TextField
-                          error={Boolean(touched.sellerBy && errors.sellerBy)}
-                          fullWidth
-                          helperText={touched.sellerBy && errors.sellerBy}
-                          label="Seller By"
-                          margin="normal"
-                          name="sellerBy"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.sellerBy}
-                        />
-                      </Box>
-                      <Box>
-                        <TextField
-                          error={Boolean(touched.stock && errors.stock)}
-                          fullWidth
-                          helperText={touched.stock && errors.stock}
-                          label="Stock"
-                          margin="normal"
-                          name="stock"
-                          type="number"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.stock}
-                        />
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <Box>
-                        <TextField
-                          error={Boolean(touched.title && errors.title)}
-                          fullWidth
-                          helperText={touched.title && errors.title}
-                          label="Title"
-                          margin="normal"
-                          name="title"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.title}
-                        />
-                      </Box>
-                      <Box>
-                        <TextField
-                          error={Boolean(touched.discount && errors.discount)}
-                          fullWidth
-                          helperText={touched.discount && errors.discount}
-                          label="Discount"
-                          margin="normal"
-                          name="discount"
-                          type="number"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.discount}
-                        />
-                      </Box>
-                      <Box>
-                        <TextField
-                          error={Boolean(
-                            touched.retrunDayCount && errors.retrunDayCount
-                          )}
-                          fullWidth
-                          helperText={
-                            touched.retrunDayCount && errors.retrunDayCount
-                          }
-                          label="Return Day"
-                          type="number"
-                          margin="normal"
-                          name="retrunDayCount"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.retrunDayCount}
-                        />
-                      </Box>
-                      <Box>
-                        <TextField
-                          error={Boolean(touched.category && errors.category)}
-                          fullWidth
-                          helperText={touched.category && errors.category}
-                          label="Category"
-                          margin="normal"
-                          name="category"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.category}
-                        />
-                      </Box>
-                      <Box>
-                        <TextField
-                          error={Boolean(
-                            touched.detailDescription &&
-                              errors.detailDescription
-                          )}
-                          fullWidth
-                          helperText={
-                            touched.detailDescription &&
-                            errors.detailDescription
-                          }
-                          label="Detail Description"
-                          margin="normal"
-                          name="detailDescription"
-                          multiline
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.detailDescription}
-                        />
-                      </Box>
-                      <Box>
-                        <TextField
-                          error={Boolean(touched.quantity && errors.quantity)}
-                          fullWidth
-                          helperText={touched.quantity && errors.quantity}
-                          label="Quantity"
-                          type="number"
-                          margin="normal"
-                          name="quantity"
-                          onBlur={handleBlur}
-                          onChange={handleChange}
-                          value={values.quantity}
-                        />
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Box>
-
-                <Box alignItems="center" display="flex" ml={-1}>
-                  <Checkbox
-                    checked={values.policy}
-                    name="policy"
-                    onChange={handleChange}
-                  />
-                  <Typography color="textSecondary" variant="body1">
-                    I have read the{' '}
-                    <Link
-                      color="primary"
-                      component={RouterLink}
-                      to="#"
-                      underline="always"
-                      variant="h6"
-                    >
-                      Terms and Conditions
-                    </Link>
-                  </Typography>
-                </Box>
-                {Boolean(touched.policy && errors.policy) && (
-                  <FormHelperText error>{errors.policy}</FormHelperText>
-                )}
-                <Box my={2}>
-                  <Button
-                    color="primary"
-                    // disabled={isSubmitting}
+                    <TextField
+                      fullWidth
+                      label="Selling Price"
+                      type="number"
+                      name="Selling Price"
+                      onChange={e => setSellingPrice(e.target.value)}
+                      value={sSellingPrice}
+                    />
+                    <FormControl className={classes.formControl}>
+                      <InputLabel>Color</InputLabel>
+                      <Select
+                        label="Color"
+                        labelId="color"
+                        onChange={e => setColor(e.target.value)}
+                        value={sColor}
+                      >
+                        <MenuItem value={1}>White</MenuItem>
+                        <MenuItem value={1}>Black</MenuItem>
+                        <MenuItem value={1}>Gray</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <FormControl className={classes.formControl}>
+                      <InputLabel>Category</InputLabel>
+                      <Select
+                        labelId="category"
+                        label="Category"
+                        onChange={e => setCategory(e.target.value)}
+                        value={oCategory}
+                      >
+                        <MenuItem value={2}>Main Category</MenuItem>
+                        <MenuItem value={2}>Sub Category</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
                     fullWidth
-                    size="large"
-                    type="submit"
-                    variant="contained"
-                  >
-                    Sign up now
-                  </Button>
-                </Box>
-                {/* <Typography
-                  color="textSecondary"
-                  variant="body1"
-                >
-                  Have an account?
-                  {' '}
-                  <Link
-                    component={RouterLink}
-                    to="/login"
-                    variant="h6"
-                  >
-                    Sign in
-                  </Link>
-                </Typography> */}
-              </form>
-            )}
-          </Formik>
+                    label="Seller By"
+                    name="sellerby"
+                    onChange={e => setSellerBy(e.target.value)}
+                    value={sSellerBy}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Discount"
+                    type="number"
+                    name="Discount"
+                    onChange={e => setDiscount(e.target.value)}
+                    value={sDiscount}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Details Description"
+                    multiline
+                    name="description"
+                    onChange={e => setDetailDescription(e.target.value)}
+                    value={sDetailDescription}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Quantity"
+                    type="number"
+                    name="quantity"
+                    onChange={e => setQuantity(e.target.value)}
+                    value={sQuantity}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Stock"
+                    type="number"
+                    name="stock"
+                    onChange={e => setStock(e.target.value)}
+                    value={sStock}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Return Day Count"
+                    name="Return Day Count"
+                    onChange={e => setReturnDayCount(e.target.value)}
+                    value={sReturnDayCount}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+
+            <Box my={2}>
+              <Button
+                color="primary"
+                fullWidth
+                size="large"
+                type="submit"
+                variant="contained"
+                onClick={() => submitProduct()}
+              >
+                Sign up now
+              </Button>
+            </Box>
+          </form>
         </Container>
       </Box>
     </Page>

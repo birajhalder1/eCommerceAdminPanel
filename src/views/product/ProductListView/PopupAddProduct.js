@@ -28,7 +28,6 @@ export default function PopupAddProduct(props) {
         fullWidth
         maxWidth = "md"
         open={openPopup}
-        onClose={() => setOpenPopup(false)}
       >
         <DialogTitle>
           <Box display="flex">

@@ -23,9 +23,9 @@ const useStyles = makeStyles(theme => ({
   exportButton: {
     marginRight: theme.spacing(1)
   },
-  addProductButton: {
-    marginLeft: theme.spacing(2)
-  }
+  // addProductButton: {
+  //   marginLeft: theme.spacing(2)
+  // }
 }));
 
 const Toolbar = ({ className, ...rest }) => {
@@ -47,13 +47,13 @@ const Toolbar = ({ className, ...rest }) => {
           Add product
         </Button>
 
-        <Button
+        {/* <Button
           color="primary"
           variant="outlined"
           className={classes.addProductButton}
         >
           Image Upload
-        </Button>
+        </Button> */}
       </Box>
       <Box>
         <PopupAddProduct
